@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydroRoute AI - Flood-Aware Navigation</title>
+    <meta name="description" content="Real-time flood-aware navigation and safety assistant. Stay safe during heavy rain and urban flooding.">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-water"></i>
+                <span>HydroRoute AI</span>
+            </div>
+            <div class="subtitle">Flood-Aware Navigation & Safety Assistant</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Control Panel -->
+        <aside class="control-panel" id="controlPanel">
+            <div class="panel-header">
+                <h2><i class="fas fa-route"></i> Plan Your Safe Route</h2>
+                <p class="panel-subtitle">Tell us where you are and where you need to go</p>
+            </div>
+
+            <!-- Input Mode Selector -->
+            <div class="input-mode-selector">
+                <button class="mode-btn active" data-mode="manual" onclick="setInputMode('manual')">
+                    <i class="fas fa-keyboard"></i> Type Locations
+                </button>
+                <button class="mode-btn" data-mode="gps" onclick="setInputMode('gps')">
+                    <i class="fas fa-gps"></i> GPS (Map Click)
+                </button>
+                <button class="mode-btn" data-mode="live" onclick="setInputMode('live')">
+                    <i class="fas fa-location-dot"></i> Live Location
+                </button>
+            </div>
+
+            <!-- Mode of Travel -->
+            <div class="travel-mode-selector">
+                <span class="mode-label">Travel Mode:</span>
+                <div class="mode-options">
+                    <button class="mode-option active" data-travel="four-wheeler" onclick="setTravelMode('four-wheeler')">
+                        <i class="fas fa-car"></i> Car
+                    </button>
+                    <button class="mode-option" data-travel="two-wheeler" onclick="setTravelMode('two-wheeler')">
+                        <i class="fas fa-motorcycle"></i> Bike/Scooter
+                    </button>
+                    <button class="mode-option" data-travel="walking" onclick="setTravelMode('walking')">
+                        <i class="fas fa-walking"></i> Walking
+                    </button>
+                    <button class="mode-option" data-travel="public-transit" onclick="setTravelMode('public-transit')">
+                        <i class="fas fa-bus"></i> Public Transit
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manual Input Form -->
+            <div class="form-section" id="manualForm">
+                <div class="input-group">
+                    <label for="originInput"><i class="fas fa-location-dot"></i> From</label>
+                    <input type="text" id="originInput" placeholder="Enter origin (e.g., Mumbai, India)" />
+                    <div class="suggestions" id="originSuggestions"></div>
+                </div>
+                <div class="input-group">
+                    <label for="destinationInput"><i class="fas fa-flag-checkered"></i> To</label>
+                    <input type="text" id="destinationInput" placeholder="Enter destination" />
+                    <div class="suggestions" id="destinationSuggestions"></div>
+                </div>
+            </div>
+
+            <!-- GPS Input Form -->
+            <div class="form-section hidden" id="gpsForm">
+                <p class="form-hint"><i class="fas fa-info-circle"></i> Click on the map to set origin and destination</p>
+                <div class="gps-display">
+                    <div class="gps-point">
+                        <span class="gps-label">Origin</span>
+                        <span class="gps-coords" id="gpsOriginCoords">Not set</span>
+                    </div>
+                    <div class="gps-point">
+                        <span class="gps-label">Destination</span>
+                        <span class="gps-coords" id="gpsDestCoords">Not set</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Location Form -->
+            <div class="form-section hidden" id="liveForm">
+                <p class="form-hint"><i class="fas fa-info-circle"></i> Using your current GPS location as starting point</p>
+                <div class="gps-display">
+                    <div class="gps-point">
+                        <span class="gps-label">Live Location</span>
+                        <span class="gps-coords" id="liveLocationCoords">Detecting...</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="liveDestinationInput"><i class="fas fa-flag-checkered"></i> Destination</label>
+                    <input type="text" id="liveDestinationInput" placeholder="Enter destination" />
+                    <div class="suggestions" id="liveDestinationSuggestions"></div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button class="submit-btn" id="submitRouteBtn" onclick="submitRoute()">
+                <span class="btn-text">Get Safe Route</span>
+                <div class="loading-spinner hidden" id="loadingSpinner"></div>
+            </button>
+        </aside>
+
+        <!-- Map Section -->
+        <section class="map-section" id="mapSection">
+            <div id="map"></div>
+        </section>
+
+        <!-- Results Panel (slides in) -->
+        <aside class="results-panel hidden" id="resultsPanel">
+            <div class="results-header">
+                <h2><i class="fas fa-shield-alt"></i> Safety Assessment</h2>
+                <button class="close-results" onclick="closeResults()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="results-content" id="resultsContent">
+                <div class="loading-results">
+                    <div class="spinner"></div>
+                    <p>Analyzing flood risk and planning safe route...</p>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar">
+        <span class="status-icon" id="statusIcon">🟢</span>
+        <span class="status-text" id="statusText">Ready to plan your safe route</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>
